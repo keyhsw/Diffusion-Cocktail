@@ -1,0 +1,10 @@
+gradio
+accelerate
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.1.0
+torchvision
+transformers==4.35.2
+diffusers==0.24.0
+xformers
+open_clip_torch
+clip-interrogator
