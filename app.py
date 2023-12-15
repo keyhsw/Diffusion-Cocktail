@@ -76,8 +76,8 @@ class WebApp():
             }}
             """
         
-        # pre-download base model for better user experience
-        self._preload_pipeline()
+        # # pre-download base model for better user experience
+        # self._preload_pipeline()
 
         self.debug_mode = debug_mode # turn off clip interrogator when debugging for faster building speed
         if not self.debug_mode:
@@ -182,35 +182,35 @@ class WebApp():
                 self.args_input['seed'] = gr.Number(label='seed', value=self.args_base['seed'], interactive=True, precision=0, step=1)
 
     def run_ditail(self, *values):
-        self.args = self.args_base.copy()
-        print(self.args_input.keys())
-        for k, v in zip(list(self.args_input.keys()), values):
-            self.args[k] = v
-        # quick fix for example
-        self.args['lora'] = 'none' if not isinstance(self.args['lora'], str) else self.args['lora']
-        print('selected lora: ', self.args['lora'])
-        # map inversion model to url
-        self.args['pos_prompt'] = ', '.join(LORA_TRIGGER_WORD.get(self.args['lora'], [])+[self.args['pos_prompt']])
-        self.args['inv_model'] = BASE_MODEL[self.args['inv_model']]
-        self.args['spl_model'] = BASE_MODEL[self.args['spl_model']]
-        print('selected model: ', self.args['inv_model'], self.args['spl_model'])
+        try:
+            self.args = self.args_base.copy()
+            print(self.args_input.keys())
+            for k, v in zip(list(self.args_input.keys()), values):
+                self.args[k] = v
+            # quick fix for example
+            self.args['lora'] = 'none' if not isinstance(self.args['lora'], str) else self.args['lora']
+            print('selected lora: ', self.args['lora'])
+            # map inversion model to url
+            self.args['pos_prompt'] = ', '.join(LORA_TRIGGER_WORD.get(self.args['lora'], [])+[self.args['pos_prompt']])
+            self.args['inv_model'] = BASE_MODEL[self.args['inv_model']]
+            self.args['spl_model'] = BASE_MODEL[self.args['spl_model']]
+            print('selected model: ', self.args['inv_model'], self.args['spl_model'])
 
-        seed_everything(self.args['seed'])
-        ditail = DitailDemo(self.args)
-        
-        metadata_to_show = ['inv_model', 'spl_model', 'lora', 'lora_scale', 'inv_steps', 'spl_steps', 'pos_prompt', 'alpha', 'neg_prompt', 'beta', 'omega']
-        self.args_to_show = {}
-        for key in metadata_to_show:
-            self.args_to_show[key] = self.args[key ]
+            seed_everything(self.args['seed'])
+            ditail = DitailDemo(self.args)
+            
+            metadata_to_show = ['inv_model', 'spl_model', 'lora', 'lora_scale', 'inv_steps', 'spl_steps', 'pos_prompt', 'alpha', 'neg_prompt', 'beta', 'omega']
+            self.args_to_show = {}
+            for key in metadata_to_show:
+                self.args_to_show[key] = self.args[key]
 
-        return ditail.run_ditail(), self.args_to_show
+            return ditail.run_ditail(), self.args_to_show
         # return self.args['img'], self.args
+        except:
+            print("Unknown error occurs")
 
     def run_example(self, img, prompt, inv_model, spl_model, lora):
-        try:
-            return self.run_ditail(img, prompt, spl_model, gr.State(lora), inv_model)
-        except UnknownError as e:
-            print(f"Caught an exception: {e}")
+        return self.run_ditail(img, prompt, spl_model, gr.State(lora), inv_model)
 
     def show_credits(self):
         # gr.Markdown(
