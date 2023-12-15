@@ -7,6 +7,7 @@ import torchvision.transforms as T
 
 from clip_interrogator import Config, Interrogator
 from diffusers import StableDiffusionPipeline
+from transformers import file_utils
 
 from ditail import DitailDemo, seed_everything
 
@@ -82,20 +83,21 @@ class WebApp():
         self.debug_mode = debug_mode # turn off clip interrogator when debugging for faster building speed
         if not self.debug_mode:
             self.init_interrogator()
+    
 
 
     def init_interrogator(self):
         cache_path = os.environ.get('HF_HOME')
-        if cache_path:
-            config = Config(cache_path=cache_path)
-        else:
-            config = Config()
+        print(f"Intended cache dir: {cache_path}")
+        config = Config()
+        config.cache_path = cache_path
         config.clip_model_name = self.args_base['clip_model_name']
         config.caption_model_name = self.args_base['caption_model_name']
         self.ci = Interrogator(config)
         self.ci.config.chunk_size = 2048 if self.ci.config.clip_model_name == "ViT-L-14/openai" else 1024
         self.ci.config.flavor_intermediate_count = 2048 if self.ci.config.clip_model_name == "ViT-L-14/openai" else 1024
 
+        print(f"HF cache dir: {file_utils.default_cache_path}")
 
     def _preload_pipeline(self):
         for model in BASE_MODEL.values():
@@ -206,8 +208,9 @@ class WebApp():
 
             return ditail.run_ditail(), self.args_to_show
         # return self.args['img'], self.args
-        except:
-            print("Unknown error occurs")
+        except Exception as e:
+            print(f"Error catched: {e}")
+            gr.Markdown(f"**Error catched: {e}**")
 
     def run_example(self, img, prompt, inv_model, spl_model, lora):
         return self.run_ditail(img, prompt, spl_model, gr.State(lora), inv_model)
