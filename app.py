@@ -85,7 +85,11 @@ class WebApp():
 
 
     def init_interrogator(self):
-        config = Config()
+        cache_path = os.environ.get('HF_HOME')
+        if cache_path:
+            config = Config(cache_path=cache_path)
+        else:
+            config = Config()
         config.clip_model_name = self.args_base['clip_model_name']
         config.caption_model_name = self.args_base['caption_model_name']
         self.ci = Interrogator(config)
