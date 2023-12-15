@@ -6,6 +6,7 @@ import torch
 import torchvision.transforms as T
 
 from clip_interrogator import Config, Interrogator
+from diffusers import StableDiffusionPipeline
 
 from ditail import DitailDemo, seed_everything
 
@@ -74,6 +75,9 @@ class WebApp():
                 gtag('config', '{self.gtag}');
             }}
             """
+        
+        # pre-download base model for better user experience
+        self._preload_pipeline()
 
         self.debug_mode = debug_mode # turn off clip interrogator when debugging for faster building speed
         if not self.debug_mode:
@@ -81,7 +85,6 @@ class WebApp():
 
 
     def init_interrogator(self):
-        # init clip interrogator
         config = Config()
         config.clip_model_name = self.args_base['clip_model_name']
         config.caption_model_name = self.args_base['caption_model_name']
@@ -89,16 +92,25 @@ class WebApp():
         self.ci.config.chunk_size = 2048 if self.ci.config.clip_model_name == "ViT-L-14/openai" else 1024
         self.ci.config.flavor_intermediate_count = 2048 if self.ci.config.clip_model_name == "ViT-L-14/openai" else 1024
 
+
+    def _preload_pipeline(self):
+        for model in BASE_MODEL.values():
+            pipe = StableDiffusionPipeline.from_pretrained(
+                model, torch_dtype=torch.float16
+            ).to(self.args_base['device'])
+        pipe = None
+
+
     def title(self):
         gr.HTML(
                 """
                 <div style="display: flex; justify-content: center; align-items: center; text-align: center;">
                 <div>
                     <h1 >Diffusion Cocktail 🍸: Fused Generation from Diffusion Models</h1>
-                    <div style="display: flex; justify-content: center; align-items: center; text-align: center; margin: 20px; gap: 10px;>
-                        <a class="flex-item" href="https://arxiv.org/abs/your-arxiv-id" target="_blank">
+                    <div style="display: flex; justify-content: center; align-items: center; text-align: center; margin: 20px; gap: 10px;">
+                        <a class="flex-item" href="https://arxiv.org/abs/2312.08873" target="_blank">
                             <img src="https://img.shields.io/badge/arXiv-paper-darkred.svg" alt="arXiv Paper">
-                        </a>
+                        </a>                      
                         <a class="flex-item" href="https://MAPS-research.github.io/Ditail" target="_blank">
                             <img src="https://img.shields.io/badge/Project_Page-Diffusion_Cocktail-yellow.svg" alt="Project Page">
                         </a>
