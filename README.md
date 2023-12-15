@@ -1,7 +1,7 @@
 ---
 title: Diffusion Cocktail
 emoji: 🍸
-colorFrom: orange
+colorFrom: yellow
 colorTo: pink
 sdk: gradio
 sdk_version: 4.7.1
