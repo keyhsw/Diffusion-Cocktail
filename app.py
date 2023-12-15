@@ -207,7 +207,10 @@ class WebApp():
         # return self.args['img'], self.args
 
     def run_example(self, img, prompt, inv_model, spl_model, lora):
-        return self.run_ditail(img, prompt, spl_model, gr.State(lora), inv_model)
+        try:
+            return self.run_ditail(img, prompt, spl_model, gr.State(lora), inv_model)
+        except UnknownError as e:
+            print(f"Caught an exception: {e}")
 
     def show_credits(self):
         # gr.Markdown(
