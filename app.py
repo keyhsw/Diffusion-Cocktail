@@ -91,6 +91,7 @@ class WebApp():
         print(f"Intended cache dir: {cache_path}")
         config = Config()
         config.cache_path = cache_path
+        config.clip_model_path = cache_path
         config.clip_model_name = self.args_base['clip_model_name']
         config.caption_model_name = self.args_base['caption_model_name']
         self.ci = Interrogator(config)
