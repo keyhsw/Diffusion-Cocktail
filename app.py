@@ -16,7 +16,7 @@ BASE_MODEL = {
     # 'sd1.5': './ditail/model/stable-diffusion-v1-5'
     'realistic vision': 'stablediffusionapi/realistic-vision-v51',
     'pastel mix (anime)': 'stablediffusionapi/pastel-mix-stylized-anime',
-    'chaos (abstract)': 'MAPS-research/Chaos3.0',
+    # 'chaos (abstract)': 'MAPS-research/Chaos3.0',
 }
 
 # LoRA trigger words
