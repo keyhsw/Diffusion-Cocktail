@@ -218,8 +218,37 @@ class WebApp():
             print(f"Error catched: {e}")
             gr.Markdown(f"**Error catched: {e}**")
 
+    def run_ditail_alt(self, gr_args, *values):
+        gr_args = self.args_base.copy()
+        print(self.args_input.keys())
+        for k, v in zip(list(self.args_input.keys()), values):
+            gr_args[k] = v
+        # quick fix for example
+        gr_args['lora'] = 'none' if not isinstance(gr_args['lora'], str) else gr_state['lora']
+        print('selected lora: ', gr_args['lora'])
+        # map inversion model to url
+        gr_args['pos_prompt'] = ', '.join(LORA_TRIGGER_WORD.get(gr_args['lora'], [])+[gr_args['pos_prompt']])
+        gr_args['inv_model'] = BASE_MODEL[gr_args['inv_model']]
+        gr_args['spl_model'] = BASE_MODEL[gr_args['spl_model']]
+        print('selected model: ', gr_args['inv_model'], gr_args['spl_model'])
+
+        seed_everything(gr_args['seed'])
+        ditail = DitailDemo(gr_args)
+        
+        metadata_to_show = ['inv_model', 'spl_model', 'lora', 'lora_scale', 'inv_steps', 'spl_steps', 'pos_prompt', 'alpha', 'neg_prompt', 'beta', 'omega']
+        self.args_to_show = {}
+        for key in metadata_to_show:
+            self.args_to_show[key] = gr_args[key]
+
+        img = ditail.run_ditail()
+
+        # reset ditail
+        ditail = None
+
+        return gr_args, img, self.args_to_show
+
     def run_example(self, img, prompt, inv_model, spl_model, lora):
-        return self.run_ditail(img, prompt, spl_model, gr.State(lora), inv_model)
+        return self.run_ditail_alt(self.gr_state, img, prompt, spl_model, gr.State(lora), inv_model)
 
     def show_credits(self):
         # gr.Markdown(
@@ -240,6 +269,7 @@ class WebApp():
 
     def ui(self):
         with gr.Blocks(css='.input_image img {object-fit: contain;}', head=self.ga_script) as demo:
+
             self.title()
             with gr.Row():
                 # with gr.Column():
@@ -259,9 +289,12 @@ class WebApp():
                 # expected_output_image = gr.Image(label="expected output image", visible=False)
                 metadata = gr.JSON(label='metadata')
 
-                submit_btn.click(self.run_ditail,
-                                inputs=list(self.args_input.values()),
-                                outputs=[output_image, metadata],
+                # init a gradio state
+                self.gr_state = gr.State()
+
+                submit_btn.click(self.run_ditail_alt,
+                                inputs=[self.gr_state] + list(self.args_input.values()),
+                                outputs=[self.gr_state, output_image, metadata],
                                 scroll_to_output=True,
                                 )
 
@@ -271,7 +304,7 @@ class WebApp():
                     examples=[[os.path.join(os.path.dirname(__file__), "example", "Lenna.png"), 'a woman called Lenna wearing a feathered hat', list(BASE_MODEL.keys())[1], list(BASE_MODEL.keys())[2], 'none']],
                     inputs=[self.args_input['img'], self.args_input['pos_prompt'], self.args_input['inv_model'], self.args_input['spl_model'], gr.Textbox(label='LoRA', visible=False), ],
                     fn = self.run_example,
-                    outputs=[output_image, metadata],
+                    outputs=[self.gr_state, output_image, metadata],
                     run_on_click=True,
                     cache_examples=cache_examples,
                 )
