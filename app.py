@@ -237,9 +237,9 @@ class WebApp():
                 self.get_params()   
             
             with gr.Row():
-                output_image = gr.Image(label="output image")
                 with gr.Column():
-                    metadata = gr.JSON(label='metadata')
+                    output_image = gr.Image(label="output image")
+                metadata = gr.JSON(label='metadata')
 
                 submit_btn.click(self.run_ditail,
                                 inputs=list(self.args_input.values()),
