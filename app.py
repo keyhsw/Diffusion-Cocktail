@@ -154,7 +154,7 @@ class WebApp():
         
 
     def get_base_model(self):
-        self.args_input['spl_model'] = gr.Radio(choices=list(BASE_MODEL.keys()), value=list(BASE_MODEL.keys())[0], label='target base model')
+        self.args_input['spl_model'] = gr.Radio(choices=list(BASE_MODEL.keys()), value=list(BASE_MODEL.keys())[2], label='target base model')
 
     def get_lora(self, num_cols=3):
         self.args_input['lora'] = gr.State('none')
@@ -207,7 +207,12 @@ class WebApp():
             for key in metadata_to_show:
                 self.args_to_show[key] = self.args[key]
 
-            return ditail.run_ditail(), self.args_to_show
+            img = ditail.run_ditail()
+
+            # reset ditail
+            ditail = None
+
+            return img, self.args_to_show
         # return self.args['img'], self.args
         except Exception as e:
             print(f"Error catched: {e}")
