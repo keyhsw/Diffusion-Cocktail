@@ -57,8 +57,8 @@ class DitailDemo(nn.Module):
                 self.spl_model, torch_dtype=torch.float16
             ).to(self.device)
             if self.lora != 'none':
-                pipe.unfuse_lora()
-                pipe.unload_lora_weights()
+                # pipe.unfuse_lora()
+                # pipe.unload_lora_weights()
                 pipe.load_lora_weights(self.lora_dir, weight_name=f'{self.lora}.safetensors')
                 pipe.fuse_lora(lora_scale=self.lora_scale)
             pipe.enable_xformers_memory_efficient_attention()

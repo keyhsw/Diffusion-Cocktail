@@ -13,7 +13,6 @@ from ditail import DitailDemo, seed_everything
 
 BASE_MODEL = {
     'sd1.5': 'runwayml/stable-diffusion-v1-5',
-    # 'sd1.5': './ditail/model/stable-diffusion-v1-5'
     'realistic vision': 'stablediffusionapi/realistic-vision-v51',
     'pastel mix (anime)': 'stablediffusionapi/pastel-mix-stylized-anime',
     # 'chaos (abstract)': 'MAPS-research/Chaos3.0',
@@ -27,7 +26,6 @@ LORA_TRIGGER_WORD = {
     'flat': ['sdh', 'flat illustration'],
     'minecraft': ['minecraft square style', 'cg, computer graphics'],
     'animeoutline': ['lineart', 'monochrome'],
-    # 'caravaggio': ['oil painting', 'in the style of caravaggio'],
     'impressionism': ['impressionist', 'in the style of Monet'],
     'pop': ['POP ART'],
     'shinkai_makoto': ['shinkai makoto', 'kimi no na wa.', 'tenki no ko', 'kotonoha no niwa'],
@@ -62,6 +60,7 @@ class WebApp():
         self.args_input = {} # for gr.components only
         self.gr_loras = list(LORA_TRIGGER_WORD.keys())
 
+        # fun fact: google analytics doesn't work in this space currently
         self.gtag = os.environ.get('GTag')
 
         self.ga_script = f"""
@@ -83,7 +82,6 @@ class WebApp():
         self.debug_mode = debug_mode # turn off clip interrogator when debugging for faster building speed
         if not self.debug_mode:
             self.init_interrogator()
-    
 
 
     def init_interrogator(self):
@@ -135,18 +133,15 @@ class WebApp():
         self.args_input['img'] = gr.Image(label='content image', type='pil', show_share_button=False, elem_classes="input_image")
     
     def get_prompts(self):
-        # with gr.Row():
         generate_prompt = gr.Checkbox(label='generate prompt with clip', value=True)
         self.args_input['pos_prompt'] = gr.Textbox(label='prompt')
-            
-            
+             
         # event listeners
         self.args_input['img'].upload(self._interrogate_image, inputs=[self.args_input['img'], generate_prompt], outputs=[self.args_input['pos_prompt']])
         generate_prompt.change(self._interrogate_image, inputs=[self.args_input['img'], generate_prompt], outputs=[self.args_input['pos_prompt']])
 
 
     def _interrogate_image(self, image, generate_prompt):
-        # self.init_interrogator()
         if hasattr(self, 'ci') and generate_prompt:
             return self.ci.interrogate_fast(image).split(',')[0].replace('arafed', '')
         else:
@@ -169,7 +164,6 @@ class WebApp():
             with gr.Column():
                 self.args_input['inv_model'] = gr.Radio(choices=list(BASE_MODEL.keys()), value=list(BASE_MODEL.keys())[1], label='inversion base model')
                 self.args_input['neg_prompt'] = gr.Textbox(label='negative prompt', value=self.args_base['neg_prompt'])
-            # with gr.Row():
                 self.args_input['alpha'] = gr.Number(label='positive prompt scaling weight (alpha)', value=self.args_base['alpha'], interactive=True)
                 self.args_input['beta'] = gr.Number(label='negative prompt scaling weight (beta)', value=self.args_base['beta'], interactive=True)
 
@@ -185,40 +179,6 @@ class WebApp():
                 self.args_input['seed'] = gr.Number(label='seed', value=self.args_base['seed'], interactive=True, precision=0, step=1)
 
     def run_ditail(self, *values):
-        try:
-            self.args = self.args_base.copy()
-            print(self.args_input.keys())
-            for k, v in zip(list(self.args_input.keys()), values):
-                self.args[k] = v
-            # quick fix for example
-            self.args['lora'] = 'none' if not isinstance(self.args['lora'], str) else self.args['lora']
-            print('selected lora: ', self.args['lora'])
-            # map inversion model to url
-            self.args['pos_prompt'] = ', '.join(LORA_TRIGGER_WORD.get(self.args['lora'], [])+[self.args['pos_prompt']])
-            self.args['inv_model'] = BASE_MODEL[self.args['inv_model']]
-            self.args['spl_model'] = BASE_MODEL[self.args['spl_model']]
-            print('selected model: ', self.args['inv_model'], self.args['spl_model'])
-
-            seed_everything(self.args['seed'])
-            ditail = DitailDemo(self.args)
-            
-            metadata_to_show = ['inv_model', 'spl_model', 'lora', 'lora_scale', 'inv_steps', 'spl_steps', 'pos_prompt', 'alpha', 'neg_prompt', 'beta', 'omega']
-            self.args_to_show = {}
-            for key in metadata_to_show:
-                self.args_to_show[key] = self.args[key]
-
-            img = ditail.run_ditail()
-
-            # reset ditail
-            ditail = None
-
-            return img, self.args_to_show
-        # return self.args['img'], self.args
-        except Exception as e:
-            print(f"Error catched: {e}")
-            gr.Markdown(f"**Error catched: {e}**")
-
-    def run_ditail_alt(self, *values):
         gr_args = self.args_base.copy()
         print(self.args_input.keys())
         for k, v in zip(list(self.args_input.keys()), values):
@@ -242,26 +202,19 @@ class WebApp():
 
         img = ditail.run_ditail()
 
-        # reset ditail
+        # reset ditail to free memory usage
         ditail = None
 
         return img, args_to_show
 
     def run_example(self, img, prompt, inv_model, spl_model, lora):
-        return self.run_ditail_alt(img, prompt, spl_model, gr.State(lora), inv_model)
+        return self.run_ditail(img, prompt, spl_model, gr.State(lora), inv_model)
 
     def show_credits(self):
-        # gr.Markdown(
-        #     """
-        #     ### About Diffusion Cocktail (Ditail)
-        #     * This is a research project by [MAPS Lab](https://whongyi.github.io/MAPS-research), [NYU Shanghai](https://shanghai.nyu.edu)
-        #     * Authors: Haoming Liu (haoming.liu@nyu.edu), Yuanhe Guo (yuanhe.guo@nyu.edu), Hongyi Wen (hongyi.wen@nyu.edu)
-        #     """
-        # )
         gr.Markdown(
             """
             ### Model Credits
-            * Diffusion Models are downloaded from [huggingface](https://huggingface.co) and [civitai](https://civitai.com): [stable diffusion 1.5](https://huggingface.co/runwayml/stable-diffusion-v1-5), [realistic vision](https://huggingface.co/stablediffusionapi/realistic-vision-v51), [pastel mix](https://huggingface.co/stablediffusionapi/pastel-mix-stylized-anime), [chaos3.0](https://civitai.com/models/91534/chaos30)
+            * Diffusion Models are downloaded from [huggingface](https://huggingface.co): [stable diffusion 1.5](https://huggingface.co/runwayml/stable-diffusion-v1-5), [realistic vision](https://huggingface.co/stablediffusionapi/realistic-vision-v51), [pastel mix](https://huggingface.co/stablediffusionapi/pastel-mix-stylized-anime)
             * LoRA Models are downloaded from [civitai](https://civitai.com) and [liblib](https://www.liblib.art): [film](https://civitai.com/models/90393/japan-vibes-film-color), [snow](https://www.liblib.art/modelinfo/f732b23b02f041bdb7f8f3f8a256ca8b), [flat](https://www.liblib.art/modelinfo/76dcb8b59d814960b0244849f2747a15), [minecraft](https://civitai.com/models/113741/minecraft-square-style), [animeoutline](https://civitai.com/models/16014/anime-lineart-manga-like-style), [impressionism](https://civitai.com/models/113383/y5-impressionism-style), [pop](https://civitai.com/models/161450?modelVersionId=188417), [shinkai_makoto](https://civitai.com/models/10626?modelVersionId=12610) 
             """
         )
@@ -272,7 +225,6 @@ class WebApp():
 
             self.title()
             with gr.Row():
-                # with gr.Column():
                 self.get_image()
 
                 with gr.Column():
@@ -286,10 +238,10 @@ class WebApp():
             
             with gr.Row():
                 output_image = gr.Image(label="output image")
-                # expected_output_image = gr.Image(label="expected output image", visible=False)
-                metadata = gr.JSON(label='metadata')
+                with gr.Column():
+                    metadata = gr.JSON(label='metadata')
 
-                submit_btn.click(self.run_ditail_alt,
+                submit_btn.click(self.run_ditail,
                                 inputs=list(self.args_input.values()),
                                 outputs=[output_image, metadata],
                                 scroll_to_output=True,
@@ -318,6 +270,5 @@ demo = app.ui()
 
 if __name__ == "__main__":
     demo.launch(share=True)
-    # demo.launch()
     
     
