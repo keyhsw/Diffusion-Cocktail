@@ -11,6 +11,9 @@ from transformers import file_utils
 
 from ditail import DitailDemo, seed_everything
 
+from openxlab.model import download
+download(model_repo='houshaowei/Diffusion-Cocktail', output='ditail/lora')
+
 BASE_MODEL = {
     'sd1.5': 'runwayml/stable-diffusion-v1-5',
     'realistic vision': 'stablediffusionapi/realistic-vision-v51',
